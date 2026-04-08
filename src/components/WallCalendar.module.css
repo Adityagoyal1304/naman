@@ -3,7 +3,7 @@
    =========================== */
 
 /* Google Font import */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&family=Caveat:wght@400;500;600&display=swap');
 
 /* ---- Root Variables ---- */
 :root {
@@ -51,11 +51,11 @@
     );
 }
 
-/* ---- Binding Strip ---- */
+/* Binding strip — ring-hole accent glows with the month accent color */
 .bindingStrip {
   width: 100%;
   height: 22px;
-  background: var(--binding);
+  background: #1A1A1A;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -63,6 +63,7 @@
   flex-shrink: 0;
   position: relative;
   border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
 }
 
 /* Ring holes on binding strip */
@@ -104,97 +105,49 @@
 .leftPanel {
   position: relative;
   overflow: hidden;
-  background: #C4A882;
   min-height: 380px;
+  background: #1a1008; /* fallback while image loads */
 }
 
-.heroImageArea {
+/* Hero image — fills panel absolutely, object-fit cover */
+.heroImg {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  min-height: 380px;
-  position: relative;
-  display: flex;
-  align-items: stretch;
+  object-fit: cover;
+  object-position: center;
+  display: block;
 }
 
-/* Placeholder image content */
-.imagePlaceholder {
-  width: 100%;
-  position: relative;
-  overflow: hidden;
-  background:
-    radial-gradient(ellipse at 30% 20%, #e8d5b7 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 80%, #c9a87c 0%, transparent 50%),
-    linear-gradient(155deg, #d4b896 0%, #a07850 40%, #7a5830 70%, #3d2c18 100%);
+/* Outgoing image — fades out over 0.65s via CSS animation */
+.heroImgFadeOut {
+  z-index: 1; /* sits above incoming image */
+  animation: heroFadeOut 0.65s ease forwards;
 }
 
-/* Decorative botanical silhouette shapes */
-.imagePlaceholder::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: -10%;
-  width: 70%;
-  height: 75%;
-  background: rgba(50, 30, 10, 0.25);
-  clip-path: polygon(
-    20% 100%, 25% 60%, 10% 50%, 30% 40%, 35% 20%,
-    45% 35%, 50% 10%, 60% 30%, 55% 55%, 70% 48%,
-    65% 65%, 80% 60%, 75% 100%
-  );
-  filter: blur(1px);
+@keyframes heroFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
 }
 
-.imagePlaceholder::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 50%;
-  height: 60%;
-  background: rgba(30, 15, 5, 0.30);
-  clip-path: polygon(
-    10% 100%, 15% 65%, 0% 55%, 20% 42%,
-    30% 15%, 42% 38%, 40% 60%, 55% 50%,
-    50% 70%, 70% 65%, 65% 85%, 80% 78%, 100% 100%
-  );
-  filter: blur(0.5px);
-}
-
-/* Sun/moon decorative circle */
-.decorCircle {
-  position: absolute;
-  top: 14%;
-  right: 18%;
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #f5e6c8 0%, #e8c87a 60%, rgba(200, 150, 60, 0) 100%);
-  box-shadow: 0 0 30px 10px rgba(230, 190, 80, 0.25);
-  animation: glowPulse 4s ease-in-out infinite alternate;
-}
-
-@keyframes glowPulse {
-  from { box-shadow: 0 0 20px 6px rgba(230, 190, 80, 0.20); opacity: 0.85; }
-  to   { box-shadow: 0 0 40px 16px rgba(230, 190, 80, 0.35); opacity: 1; }
-}
-
-/* Month/Year overlay at bottom of left panel */
+/* Month/Year gradient overlay — always on top */
 .monthOverlay {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 2; /* always above image layers */
   padding: 32px 28px 24px;
   background: linear-gradient(
     to top,
-    rgba(20, 10, 4, 0.82) 0%,
-    rgba(20, 10, 4, 0.55) 55%,
+    rgba(10, 5, 2, 0.88) 0%,
+    rgba(10, 5, 2, 0.55) 55%,
     transparent 100%
   );
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .monthName {
@@ -321,13 +274,14 @@
   overflow: visible;
 }
 
-/* Grid month-change fade */
+/* Grid month-change page-flip */
 .gridFading {
-  animation: gridFadeOut 0.12s ease both;
+  animation: pageFlip 0.18s ease-in both;
+  transform-origin: left center;
 }
-@keyframes gridFadeOut {
-  from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 0; transform: translateY(-5px); }
+@keyframes pageFlip {
+  from { opacity: 1; transform: perspective(800px) rotateY(0deg); }
+  to   { opacity: 0; transform: perspective(800px) rotateY(10deg) scaleX(0.97); }
 }
 
 /* ── Outer cell: full grid-cell area, carries the BAND background ── */
@@ -518,6 +472,45 @@
   background: rgba(139, 111, 71, 0.12);
 }
 
+/* ── Today button ── */
+.todayBtn {
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 7px 12px;
+  background: rgba(var(--accent-light), 0.12);
+  background: rgba(139, 111, 71, 0.08);
+  border: 1px solid rgba(139, 111, 71, 0.22);
+  border-radius: 7px;
+  color: var(--accent);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s, box-shadow 0.15s;
+  min-height: 36px;
+  text-align: center;
+  animation: rangeBarIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.todayBtn:hover {
+  background: rgba(139, 111, 71, 0.16);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(139, 111, 71, 0.14);
+}
+
+/* ── Holiday emoji in cells ── */
+.holidayEmoji {
+  font-size: 0.52rem;
+  line-height: 1;
+  display: block;
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  pointer-events: none;
+  user-select: none;
+}
+
 /* ---- Divider ---- */
 .divider {
   width: 100%;
@@ -525,9 +518,18 @@
   background: linear-gradient(to right, transparent, var(--grid-border) 20%, var(--grid-border) 80%, transparent);
 }
 
-/* ---- Notes Section ---- */
-.notesSection {
+/* ── Notes Section ── */
+.notesSectionWrap {
   flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.notesHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  gap: 8px;
 }
 
 .notesSectionTitle {
@@ -537,31 +539,77 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--accent);
-  margin-bottom: 10px;
 }
 
-.noteLines {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+.charCounter {
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  transition: color 0.2s;
 }
+.charCounterWarn { color: #b85020; font-weight: 700; }
 
-.noteLine {
-  height: 28px;
-  border-bottom: 1px solid rgba(139, 111, 71, 0.18);
+/* The paper container: clips the curl, shows the gradient lines */
+.notesPaperWrap {
   position: relative;
+  border-radius: 4px 4px 16px 4px;
+  overflow: hidden;
+  /* Lined-paper background: warm horizontal rules every 28px */
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 27px,
+      rgba(139, 111, 71, 0.20) 27px,
+      rgba(139, 111, 71, 0.20) 28px
+    ),
+    rgba(250, 247, 242, 0.7);
+  border: 1px solid rgba(139, 111, 71, 0.14);
 }
 
-.noteLine::before {
-  content: '';
+/* Transparent textarea sits on top of the gradient lines */
+.noteTextarea {
+  display: block;
+  width: 100%;
+  min-height: 140px;
+  padding: 6px 10px 20px 10px;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: 'Caveat', cursive;
+  font-size: 1.05rem;
+  font-weight: 400;
+  color: #2C1F0E;
+  line-height: 28px; /* matches gradient rule spacing */
+  letter-spacing: 0.01em;
+  caret-color: var(--accent);
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+.noteTextarea::placeholder {
+  color: rgba(139, 111, 71, 0.38);
+  font-style: italic;
+}
+.noteTextarea:focus { outline: none; }
+
+/* Paper curl — bottom-right CSS triangle trick */
+.paperCurl {
   position: absolute;
-  left: 0;
-  top: 50%;
-  width: 2px;
-  height: 60%;
-  transform: translateY(-50%);
-  background: rgba(139, 111, 71, 0.20);
-  border-radius: 2px;
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(
+    225deg,
+    var(--paper-dark) 45%,
+    rgba(139, 111, 71, 0.12) 45%,
+    rgba(139, 111, 71, 0.12) 50%,
+    transparent 50%
+  );
+  pointer-events: none;
 }
 
 /* ---- RESPONSIVE — Mobile ---- */
@@ -570,33 +618,33 @@
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
   }
-
   .leftPanel {
     height: 240px;
     min-height: 240px;
   }
-
-  .heroImageArea {
-    height: 240px;
-    min-height: 240px;
-  }
-
-  .imagePlaceholder {
-    height: 240px;
-  }
-
   .rightPanel {
     border-left: none;
     border-top: 1px solid var(--grid-border);
-    padding: 20px 16px 16px;
+    padding: 16px 14px 14px;
   }
+  .monthName { font-size: 2rem; }
+  .bindingStrip { gap: 36px; }
 
-  .monthName {
-    font-size: 2rem;
+  /* 44px minimum touch targets */
+  .navBtn, .todayBtn, .rangeBarClear {
+    min-height: 44px;
+    min-width: 44px;
   }
-
-  .bindingStrip {
-    gap: 36px;
+  .dayCell {
+    min-height: 36px;
+  }
+  .cellInner {
+    width: 90%;
+    height: 90%;
+  }
+  .noteTextarea {
+    font-size: 1.1rem;
+    min-height: 120px;
   }
 }
 
