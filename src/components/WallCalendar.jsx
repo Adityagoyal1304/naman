@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import styles from './WallCalendar.module.css';
 
 /* ──────────────────────────────────────────────
@@ -98,41 +98,20 @@ function DayLabelRow() {
   );
 }
 
-/** Individual day cell */
-function DayCell({ cell, isToday }) {
-  if (cell.type === 'empty') {
-    return <div className={styles.dayCell + ' ' + styles.empty} aria-hidden="true" />;
-  }
-
-  const colIndex = (cell.day + /* offset already baked into position */ 0) % 7; // simplified
-  // Determine weekend by cell index position in the weekly grid
-  const isWeekend = false; // computed below in CalendarGrid with real col index
-  const hasEvent = PLACEHOLDER_EVENTS.has(cell.day);
-
-  return (
-    <div
-      className={[
-        styles.dayCell,
-        isToday && styles.today,
-        hasEvent && styles.hasEvent,
-      ].filter(Boolean).join(' ')}
-      role="gridcell"
-      aria-label={`Day ${cell.day}${isToday ? ', today' : ''}${hasEvent ? ', has event' : ''}`}
-      aria-current={isToday ? 'date' : undefined}
-    >
-      {cell.day}
-    </div>
-  );
-}
+/* DayCell is rendered inline inside CalendarGrid for correct col-index access */
 
 /** Full calendar grid (day labels + cells) */
-function CalendarGrid({ cells, todayDay, displayYear, displayMonth }) {
+function CalendarGrid({ cells, todayDay, displayYear, displayMonth, fading }) {
   const today = new Date();
   const isCurrentMonth =
     today.getFullYear() === displayYear && today.getMonth() === displayMonth;
 
   return (
-    <div className={styles.calGrid} role="grid" aria-label="Calendar date grid">
+    <div
+      className={[styles.calGrid, fading && styles.gridFading].filter(Boolean).join(' ')}
+      role="grid"
+      aria-label="Calendar date grid"
+    >
       {cells.map((cell, idx) => {
         const colIndex = idx % 7;
         const isWeekend = colIndex === 0 || colIndex === 6;
@@ -140,7 +119,13 @@ function CalendarGrid({ cells, todayDay, displayYear, displayMonth }) {
         const hasEvent = cell.type === 'day' && PLACEHOLDER_EVENTS.has(cell.day);
 
         if (cell.type === 'empty') {
-          return <div key={idx} className={`${styles.dayCell} ${styles.empty}`} aria-hidden="true" />;
+          return (
+            <div
+              key={idx}
+              className={`${styles.dayCell} ${styles.empty}`}
+              aria-hidden="true"
+            />
+          );
         }
 
         return (
@@ -153,10 +138,17 @@ function CalendarGrid({ cells, todayDay, displayYear, displayMonth }) {
               hasEvent && styles.hasEvent,
             ].filter(Boolean).join(' ')}
             role="gridcell"
-            aria-label={`${MONTH_NAMES[displayMonth]} ${cell.day}${isToday ? ', today' : ''}${hasEvent ? ', event' : ''}`}
+            aria-label={
+              `${MONTH_NAMES[displayMonth]} ${cell.day}` +
+              (isToday ? ', today' : '') +
+              (hasEvent ? ', has event' : '')
+            }
             aria-current={isToday ? 'date' : undefined}
           >
-            {cell.day}
+            {/* Inner span for the date number — carries the typewriter font */}
+            <span className={styles.dateNum}>{cell.day}</span>
+            {/* Today underline tick rendered as a separate element for styling freedom */}
+            {isToday && <span className={styles.todayTick} aria-hidden="true" />}
           </div>
         );
       })}
@@ -196,20 +188,34 @@ export default function WallCalendar({ initialYear, initialMonth } = {}) {
   const now = new Date();
   const [year, setYear] = useState(initialYear ?? now.getFullYear());
   const [month, setMonth] = useState(initialMonth ?? now.getMonth());
+  const [fading, setFading] = useState(false);
+  const fadeTimer = useRef(null);
 
   const todayDay = now.getDate();
 
   const cells = useMemo(() => buildCalendarCells(year, month), [year, month]);
 
-  const goToPrev = () => {
+  /** Trigger a quick fade-out/in when the month changes */
+  const triggerFade = useCallback((changeFn) => {
+    if (fadeTimer.current) clearTimeout(fadeTimer.current);
+    setFading(true);
+    fadeTimer.current = setTimeout(() => {
+      changeFn();
+      setFading(false);
+    }, 120);
+  }, []);
+
+  useEffect(() => () => clearTimeout(fadeTimer.current), []);
+
+  const goToPrev = () => triggerFade(() => {
     if (month === 0) { setMonth(11); setYear(y => y - 1); }
     else setMonth(m => m - 1);
-  };
+  });
 
-  const goToNext = () => {
+  const goToNext = () => triggerFade(() => {
     if (month === 11) { setMonth(0); setYear(y => y + 1); }
     else setMonth(m => m + 1);
-  };
+  });
 
   return (
     <article className={styles.calendarWrapper} aria-label={`Wall calendar — ${MONTH_NAMES[month]} ${year}`}>
@@ -235,10 +241,10 @@ export default function WallCalendar({ initialYear, initialMonth } = {}) {
                 aria-label="Previous month"
                 title="Previous month"
               >
-                ‹
+                ←
               </button>
-              <span className={styles.gridTitle}>
-                {MONTH_NAMES[month].slice(0, 3).toUpperCase()} · {year}
+              <span className={[styles.gridTitle, fading && styles.gridTitleFading].filter(Boolean).join(' ')}>
+                {MONTH_NAMES[month]} {year}
               </span>
               <button
                 className={styles.navBtn}
@@ -246,7 +252,7 @@ export default function WallCalendar({ initialYear, initialMonth } = {}) {
                 aria-label="Next month"
                 title="Next month"
               >
-                ›
+                →
               </button>
             </div>
 
@@ -259,6 +265,7 @@ export default function WallCalendar({ initialYear, initialMonth } = {}) {
               todayDay={todayDay}
               displayYear={year}
               displayMonth={month}
+              fading={fading}
             />
           </div>
 
