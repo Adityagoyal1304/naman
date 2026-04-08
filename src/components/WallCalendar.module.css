@@ -507,6 +507,124 @@
 .notesSectionWrap {
   flex-shrink: 0;
   padding-top: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notesTabs {
+  display: flex;
+  gap: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(139, 111, 71, 0.14);
+}
+.tabBtn {
+  background: transparent;
+  border: 1px solid rgba(139, 111, 71, 0.22);
+  border-radius: 20px;
+  padding: 4px 14px;
+  color: var(--text-muted);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.tabBtnActive {
+  background: #3D2B1F;
+  color: #fff;
+  border-color: #3D2B1F;
+}
+.notesTabBody {
+  position: relative;
+}
+.tabContentFade {
+  animation: tabFadeIn 0.2s ease forwards;
+}
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.emptyText {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-style: italic;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.rangeForm { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.rangeInput {
+  background: rgba(250, 247, 242, 0.7);
+  border: 1px solid rgba(139, 111, 71, 0.22);
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  outline: none;
+}
+.rangeInput:focus { border-color: var(--accent); }
+.rangePaper { min-height: 70px; }
+.rangeFormActions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 4px; }
+.swatchRow { display: flex; gap: 6px; }
+.swatch {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid transparent; cursor: pointer; transition: transform 0.1s;
+}
+.swatchActive { box-shadow: 0 0 0 2px #FAF7F2, 0 0 0 4px #3D2B1F; transform: scale(1.1); }
+.saveBtn, .cancelBtn {
+  padding: 6px 12px; border-radius: 4px; border: none; font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600; cursor: pointer;
+}
+.saveBtn { background: #3D2B1F; color: #FAF7F2; }
+.cancelBtn { background: transparent; color: var(--text-muted); border: 1px solid rgba(139, 111, 71, 0.22); }
+
+.rangeList { display: flex; flex-direction: column; gap: 8px; }
+.rangeCard {
+  display: flex; justify-content: space-between; align-items: stretch;
+  background: #FAF7F2; border-left: 4px solid var(--accent);
+  padding: 10px 12px; border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05); gap: 12px;
+}
+.rangeCardMain { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+.rangeCardTitle { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-primary); }
+.rangeCardTitle span { font-size: 0.65rem; color: var(--text-muted); }
+.rangeCardNote { font-family: 'Caveat', cursive; font-size: 0.9rem; color: var(--text-primary); line-height: 1.2; }
+.rangeActions { display: flex; flex-direction: column; gap: 4px; justify-content: center; }
+.rangeActions button { background: none; border: none; cursor: pointer; opacity: 0.6; transition: opacity 0.2s; font-size: 0.8rem; }
+.rangeActions button:hover { opacity: 1; }
+.rangeConfirm { display: flex; flex-direction: column; justify-content: center; align-items: flex-end; gap: 4px; font-size: 0.65rem; }
+.confirmText { color: #b85020; font-weight: 600; }
+.btnYes, .btnCan { background: transparent; border: 1px solid rgba(139,111,71,0.22); border-radius: 3px; padding: 2px 6px; cursor: pointer; width: 100%; text-align: center; }
+
+/* Grid Visual Indicators */
+.dateNoteIndicator {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: var(--accent);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.rangeBarsContainer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  pointer-events: none;
+  z-index: 10;
+}
+.rangeStackedBar {
+  height: 3px;
+  width: 100%;
 }
 
 .notesHeader {

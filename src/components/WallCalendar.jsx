@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect, useReducer } from 'react';
 import styles from './WallCalendar.module.css';
 
 /* ─────────────────────────────────────────────────
@@ -148,14 +148,45 @@ function DayLabelRow() {
   );
 }
 
-/** Interactive Notes area with lined-paper look and character counter */
-function NotesSection({ mKey, monthLabel, notes, onNoteChange, onNoteInsert }) {
-  const value  = notes[mKey] || '';
-  const pct    = Math.round((value.length / NOTE_MAX) * 100);
-  const isNear = pct >= 80;
+const RANGE_SWATCHES = ['#C8A96E', '#A3B899', '#9BAFC7', '#C49A9A', '#B8A9C9'];
 
+const initialNotesStore = { monthNotes: {}, dateNotes: {}, rangeNotes: [] };
+
+function notesReducer(state, action) {
+  switch (action.type) {
+    case 'SET_MONTH_NOTE':  return { ...state, monthNotes: { ...state.monthNotes, [action.key]: action.value } };
+    case 'SET_DATE_NOTE':   return { ...state, dateNotes: { ...state.dateNotes, [action.key]: action.value } };
+    case 'ADD_RANGE_NOTE':  return { ...state, rangeNotes: [...state.rangeNotes, action.payload] };
+    case 'EDIT_RANGE_NOTE': return { ...state, rangeNotes: state.rangeNotes.map(rn => rn.id === action.payload.id ? action.payload : rn) };
+    case 'DELETE_RANGE_NOTE': return { ...state, rangeNotes: state.rangeNotes.filter(rn => rn.id !== action.id) };
+    default: return state;
+  }
+}
+
+function NotesTabs({ activeNotesTab, setActiveNotesTab }) {
+  const tabs = [
+    { id: 'month', label: 'Month' },
+    { id: 'date',  label: 'Date' },
+    { id: 'range', label: 'Range' }
+  ];
   return (
-    <section className={styles.notesSectionWrap} aria-label={`Notes for ${monthLabel}`}>
+    <div className={styles.notesTabs}>
+      {tabs.map(t => (
+        <button key={t.id} type="button"
+          className={`${styles.tabBtn} ${activeNotesTab === t.id ? styles.tabBtnActive : ''}`}
+          onClick={() => setActiveNotesTab(t.id)}>
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function MonthNotesTab({ mKey, monthLabel, notesStore, dispatch }) {
+  const value  = notesStore.monthNotes[mKey] || '';
+  const isNear = (value.length / NOTE_MAX) >= 0.8;
+  return (
+    <div className={styles.tabContentFade}>
       <div className={styles.notesHeader}>
         <span className={styles.notesSectionTitle}>Notes for {monthLabel}</span>
         <span className={`${styles.charCounter} ${isNear ? styles.charCounterWarn : ''}`}>
@@ -163,17 +194,131 @@ function NotesSection({ mKey, monthLabel, notes, onNoteChange, onNoteInsert }) {
         </span>
       </div>
       <div className={styles.notesPaperWrap}>
-        <textarea
-          className={styles.noteTextarea}
-          value={value}
-          onChange={e => onNoteChange(mKey, e.target.value.slice(0, NOTE_MAX))}
-          placeholder={`Jot down your ${monthLabel} thoughts…`}
-          rows={5}
-          aria-label={`Notes for ${monthLabel}`}
-          spellCheck="false"
-        />
-        {/* paper curl */}
+        <textarea className={styles.noteTextarea} value={value}
+          onChange={e => dispatch({ type: 'SET_MONTH_NOTE', key: mKey, value: e.target.value.slice(0, NOTE_MAX) })}
+          placeholder={`Jot down your ${monthLabel} thoughts…`} rows={5} spellCheck="false" />
         <span className={styles.paperCurl} aria-hidden="true" />
+      </div>
+    </div>
+  );
+}
+
+function DateNotesTab({ startKey, endKey, notesStore, dispatch }) {
+  const isSingle = startKey && !endKey;
+  if (!isSingle) {
+    return <div className={`${styles.tabContentFade} ${styles.emptyText}`}><i>Click a date to add a note</i></div>;
+  }
+  const value  = notesStore.dateNotes[startKey] || '';
+  const isNear = (value.length / NOTE_MAX) >= 0.8;
+  return (
+    <div className={styles.tabContentFade}>
+      <div className={styles.notesHeader}>
+        <span className={styles.notesSectionTitle}>Note for {fmtKey(startKey)}</span>
+        <span className={`${styles.charCounter} ${isNear ? styles.charCounterWarn : ''}`}>{value.length}&thinsp;/&thinsp;{NOTE_MAX}</span>
+      </div>
+      <div className={styles.notesPaperWrap}>
+        <textarea className={styles.noteTextarea} value={value}
+          onChange={e => dispatch({ type: 'SET_DATE_NOTE', key: startKey, value: e.target.value.slice(0, NOTE_MAX) })}
+          placeholder="Write a note for this specific date..." rows={5} spellCheck="false" />
+        <span className={styles.paperCurl} aria-hidden="true" />
+      </div>
+    </div>
+  );
+}
+
+function RangeNotesTab({ mKey, startKey, endKey, notesStore, dispatch }) {
+  const hasRange = startKey && endKey;
+  const currentMonthRanges = notesStore.rangeNotes.filter(rn => rn.start.startsWith(mKey) || rn.end.startsWith(mKey));
+  
+  const [form, setForm] = useState({ id: null, label: '', note: '', color: RANGE_SWATCHES[0] });
+  
+  const handleSave = (e) => {
+    e.preventDefault();
+    if (!form.label.trim()) return;
+    if (form.id) {
+       dispatch({ type: 'EDIT_RANGE_NOTE', payload: form });
+    } else {
+       dispatch({ type: 'ADD_RANGE_NOTE', payload: { ...form, id: 'rn-' + Date.now(), start: startKey, end: endKey } });
+    }
+    setForm({ id: null, label: '', note: '', color: RANGE_SWATCHES[0] });
+  };
+  
+  const handleEdit = (rn) => setForm(rn);
+  const handleDel  = (id) => dispatch({ type: 'DELETE_RANGE_NOTE', id });
+
+  return (
+    <div className={styles.tabContentFade}>
+      {(hasRange || form.id) ? (
+        <form className={styles.rangeForm} onSubmit={handleSave}>
+          <div className={styles.notesHeader}>
+            <span className={styles.notesSectionTitle}>
+              {form.id ? 'Edit Range Note' : `${fmtKey(startKey)} → ${fmtKey(endKey)}`}
+            </span>
+          </div>
+          <input type="text" className={styles.rangeInput} placeholder="Label (e.g. Vacation)" 
+                 value={form.label} onChange={e => setForm({...form, label: e.target.value})} required />
+          <div className={`${styles.notesPaperWrap} ${styles.rangePaper}`}>
+             <textarea className={styles.noteTextarea} placeholder="Note content..." value={form.note} onChange={e => setForm({...form, note: e.target.value})} rows={2} spellCheck="false" />
+          </div>
+          <div className={styles.rangeFormActions}>
+            <div className={styles.swatchRow}>
+               {RANGE_SWATCHES.map(c => (
+                 <button type="button" key={c} style={{background: c}} 
+                         className={`${styles.swatch} ${form.color===c ? styles.swatchActive : ''}`} 
+                         onClick={() => setForm({...form, color: c})} aria-label="Select color" />
+               ))}
+            </div>
+            <button type="submit" className={styles.saveBtn}>{form.id ? 'Save Changes' : 'Save Range Note'}</button>
+            {form.id && <button type="button" className={styles.cancelBtn} onClick={() => setForm({id:null, label:'', note:'', color:RANGE_SWATCHES[0]})}>Cancel</button>}
+          </div>
+        </form>
+      ) : (
+        <div className={styles.emptyText}>Select a start and end date to attach a note</div>
+      )}
+
+      <div className={styles.rangeList}>
+        {currentMonthRanges.length === 0 ? (
+           <div className={styles.emptyText}>No range notes for this month yet</div>
+        ) : (
+           currentMonthRanges.map(rn => <RangeCard key={rn.id} rn={rn} onEdit={handleEdit} onDel={handleDel} />)
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RangeCard({ rn, onEdit, onDel }) {
+  const [confirm, setConfirm] = useState(false);
+  return (
+    <div className={styles.rangeCard} style={{ borderLeftColor: rn.color }}>
+       <div className={styles.rangeCardMain}>
+         <div className={styles.rangeCardTitle}><strong>{rn.label}</strong> <span>{fmtKey(rn.start)} → {fmtKey(rn.end)}</span></div>
+         {rn.note && <div className={styles.rangeCardNote}>{rn.note.slice(0,60)}{rn.note.length>60?'...':''}</div>}
+       </div>
+       {confirm ? (
+         <div className={styles.rangeConfirm}>
+           <span className={styles.confirmText}>Are you sure?</span>
+           <button onClick={()=>onDel(rn.id)} className={styles.btnYes}>Yes</button>
+           <button onClick={()=>setConfirm(false)} className={styles.btnCan}>Cancel</button>
+         </div>
+       ) : (
+         <div className={styles.rangeActions}>
+           <button onClick={()=>onEdit(rn)} title="Edit">✏️</button>
+           <button onClick={()=>setConfirm(true)} title="Delete">🗑️</button>
+         </div>
+       )}
+    </div>
+  );
+}
+
+function NotesSection({ mKey, monthLabel, notesStore, dispatch, activeNotesTab, setActiveNotesTab, startKey, endKey }) {
+  return (
+    <section className={styles.notesSectionWrap} aria-label="Notes Panel">
+      <NotesTabs activeNotesTab={activeNotesTab} setActiveNotesTab={setActiveNotesTab} />
+      <div className={styles.notesTabBody}>
+        {activeNotesTab === 'month' && <MonthNotesTab mKey={mKey} monthLabel={monthLabel} notesStore={notesStore} dispatch={dispatch} />}
+        {activeNotesTab === 'date'  && <DateNotesTab startKey={startKey} endKey={endKey} notesStore={notesStore} dispatch={dispatch} />}
+        {activeNotesTab === 'range' && <RangeNotesTab mKey={mKey} startKey={startKey} endKey={endKey} notesStore={notesStore} dispatch={dispatch} />}
       </div>
     </section>
   );
@@ -204,6 +349,7 @@ function RangeBar({ startKey, endKey, onClear }) {
 function CalendarGrid({
   cells, todayDay, displayYear, displayMonth, fading,
   startKey, endKey, hoverKey,
+  dateNotes, rangeNotes,
   onDayClick, onDayHover, onGridLeave, onDayDoubleClick,
 }) {
   const today = new Date();
@@ -231,6 +377,8 @@ function CalendarGrid({
         const hasEvent  = PLACEHOLDER_EVENTS.has(cell.day);
         const holiday   = HOLIDAY_MAP[`${displayMonth}-${cell.day}`];
         const key       = dk(displayYear, displayMonth, cell.day);
+        const hasDateNote = !!dateNotes[key];
+        const cellRanges  = rangeNotes.filter(rn => key >= rn.start && key <= rn.end);
 
         let loKey = null, hiKey = null;
         if (startKey && effectiveEnd && startKey !== effectiveEnd) {
@@ -294,13 +442,22 @@ function CalendarGrid({
               {hasEvent && !isSelected && !isPreviewEnd && !isInBetween && (
                 <span className={styles.eventDot} aria-hidden="true" />
               )}
-              {/* Holiday emoji */}
               {holiday && !isSelected && !isPreviewEnd && (
                 <span className={styles.holidayEmoji} title={
                   HOLIDAYS.find(h => h.month===displayMonth && h.day===cell.day)?.label
                 }>{holiday}</span>
               )}
+              {hasDateNote && !isSelected && !isPreviewEnd && (
+                <span className={styles.dateNoteIndicator} aria-hidden="true" />
+              )}
             </span>
+            {cellRanges.length > 0 && (
+              <div className={styles.rangeBarsContainer}>
+                {cellRanges.slice(0, 3).map(rn => (
+                  <div key={rn.id} className={styles.rangeStackedBar} style={{ backgroundColor: rn.color }} title={rn.label} />
+                ))}
+              </div>
+            )}
           </div>
         );
       })}
@@ -329,8 +486,9 @@ export default function WallCalendar({ initialYear, initialMonth } = {}) {
   const [endKey,   setEndKey]   = useState(null);
   const [hoverKey, setHoverKey] = useState(null);
 
-  /* Notes: { "YYYY-MM": string } */
-  const [notes, setNotes] = useState({});
+  /* Notes State */
+  const [notesStore, dispatch] = useReducer(notesReducer, initialNotesStore);
+  const [activeNotesTab, setActiveNotesTab] = useState('month');
 
   const todayDay = now.getDate();
   const cells = useMemo(() => buildCalendarCells(year, month), [year, month]);
@@ -350,6 +508,7 @@ export default function WallCalendar({ initialYear, initialMonth } = {}) {
   }, []);
 
   const changeMonth = useCallback((changeFn) => {
+    setActiveNotesTab('month');
     const old = month;
     setPrevMonth(old);
     setIsCrossfading(true);
@@ -380,10 +539,17 @@ export default function WallCalendar({ initialYear, initialMonth } = {}) {
     setHoverKey(null);
     if (!startKey || endKey) {
       setStartKey(key); setEndKey(null);
+      setActiveNotesTab('date');
     } else {
-      if (key === startKey) setStartKey(null);
-      else if (key > startKey) setEndKey(key);
-      else setStartKey(key);
+      if (key === startKey) {
+         setStartKey(null);
+      } else if (key > startKey) {
+         setEndKey(key);
+         setActiveNotesTab('range');
+      } else {
+         setStartKey(key);
+         setActiveNotesTab('date');
+      }
     }
   }, [startKey, endKey]);
 
@@ -399,18 +565,11 @@ export default function WallCalendar({ initialYear, initialMonth } = {}) {
   /** Double-click a date → prepend "Mon DD —\n" to that month's note */
   const handleDayDoubleClick = useCallback((displayMonth, day) => {
     const prefix = `${MONTH_ABBR[displayMonth]} ${day} —\n`;
-    setNotes(prev => {
-      const current = prev[mKey] || '';
-      // Only prepend if not already starting with this exact prefix
-      if (current.startsWith(prefix)) return prev;
-      const next = (prefix + current).slice(0, NOTE_MAX);
-      return { ...prev, [mKey]: next };
-    });
-  }, [mKey]);
-
-  const handleNoteChange = useCallback((key, value) => {
-    setNotes(prev => ({ ...prev, [key]: value }));
-  }, []);
+    const current = notesStore.monthNotes[mKey] || '';
+    if (current.startsWith(prefix)) return;
+    dispatch({ type: 'SET_MONTH_NOTE', key: mKey, value: (prefix + current).slice(0, NOTE_MAX) });
+    setActiveNotesTab('month');
+  }, [mKey, notesStore.monthNotes]);
 
   const theme = MONTH_THEMES[month];
   const isOnToday = now.getFullYear() === year && now.getMonth() === month;
@@ -435,11 +594,10 @@ export default function WallCalendar({ initialYear, initialMonth } = {}) {
       <div className={styles.bottomSection}>
         <aside className={styles.notesSidebar}>
           <NotesSection
-            mKey={mKey}
-            monthLabel={monthLabel}
-            notes={notes}
-            onNoteChange={handleNoteChange}
-            onNoteInsert={handleDayDoubleClick}
+            mKey={mKey} monthLabel={monthLabel}
+            notesStore={notesStore} dispatch={dispatch}
+            activeNotesTab={activeNotesTab} setActiveNotesTab={setActiveNotesTab}
+            startKey={startKey} endKey={endKey}
           />
         </aside>
 
@@ -460,6 +618,7 @@ export default function WallCalendar({ initialYear, initialMonth } = {}) {
             cells={cells} todayDay={todayDay}
             displayYear={year} displayMonth={month} fading={fading}
             startKey={startKey} endKey={endKey} hoverKey={hoverKey}
+            dateNotes={notesStore.dateNotes} rangeNotes={notesStore.rangeNotes}
             onDayClick={handleDayClick}
             onDayHover={handleDayHover}
             onGridLeave={handleGridLeave}
