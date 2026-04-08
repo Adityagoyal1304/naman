@@ -1,0 +1,456 @@
+/* ===========================
+   WallCalendar CSS Module
+   =========================== */
+
+/* Google Font import via @import inside CSS module */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600&display=swap');
+
+/* ---- Root Variables ---- */
+:root {
+  --paper: #FAF7F2;
+  --paper-dark: #F0EBE1;
+  --binding: #1A1A1A;
+  --binding-ring: #3a3a3a;
+  --accent: #8B6F47;
+  --accent-light: #C4A882;
+  --text-primary: #2C2C2C;
+  --text-muted: #888880;
+  --grid-border: #D9D3CA;
+  --today-bg: #8B6F47;
+  --weekend-color: #A05A5A;
+  --shadow-color: rgba(60, 40, 20, 0.18);
+  --radius: 10px;
+}
+
+/* ---- Outer Wrapper ---- */
+.calendarWrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  border-radius: var(--radius);
+  box-shadow:
+    0 8px 32px var(--shadow-color),
+    0 2px 8px rgba(0,0,0,0.10),
+    0 0 0 1px rgba(139, 111, 71, 0.10);
+  overflow: hidden;
+  background: var(--paper);
+  font-family: 'Inter', sans-serif;
+  /* subtle paper texture via repeating gradient */
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 28px,
+      rgba(139, 111, 71, 0.04) 28px,
+      rgba(139, 111, 71, 0.04) 29px
+    );
+}
+
+/* ---- Binding Strip ---- */
+.bindingStrip {
+  width: 100%;
+  height: 22px;
+  background: var(--binding);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  flex-shrink: 0;
+  position: relative;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+/* Ring holes on binding strip */
+.bindingStrip::before,
+.bindingStrip::after {
+  content: '';
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #111;
+  border: 2px solid #555;
+  box-shadow:
+    inset 0 1px 3px rgba(0,0,0,0.8),
+    0 0 0 1px #222;
+  position: absolute;
+}
+
+.bindingRing {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #111;
+  border: 2px solid #555;
+  box-shadow:
+    inset 0 1px 3px rgba(0,0,0,0.8),
+    0 0 0 1px #222;
+  flex-shrink: 0;
+}
+
+/* ---- Two-Panel Body ---- */
+.calendarBody {
+  display: grid;
+  grid-template-columns: 40% 60%;
+  min-height: 480px;
+}
+
+/* ---- LEFT PANEL ---- */
+.leftPanel {
+  position: relative;
+  overflow: hidden;
+  background: #C4A882;
+  min-height: 380px;
+}
+
+.heroImageArea {
+  width: 100%;
+  height: 100%;
+  min-height: 380px;
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+/* Placeholder image content */
+.imagePlaceholder {
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 30% 20%, #e8d5b7 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, #c9a87c 0%, transparent 50%),
+    linear-gradient(155deg, #d4b896 0%, #a07850 40%, #7a5830 70%, #3d2c18 100%);
+}
+
+/* Decorative botanical silhouette shapes */
+.imagePlaceholder::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -10%;
+  width: 70%;
+  height: 75%;
+  background: rgba(50, 30, 10, 0.25);
+  clip-path: polygon(
+    20% 100%, 25% 60%, 10% 50%, 30% 40%, 35% 20%,
+    45% 35%, 50% 10%, 60% 30%, 55% 55%, 70% 48%,
+    65% 65%, 80% 60%, 75% 100%
+  );
+  filter: blur(1px);
+}
+
+.imagePlaceholder::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 50%;
+  height: 60%;
+  background: rgba(30, 15, 5, 0.30);
+  clip-path: polygon(
+    10% 100%, 15% 65%, 0% 55%, 20% 42%,
+    30% 15%, 42% 38%, 40% 60%, 55% 50%,
+    50% 70%, 70% 65%, 65% 85%, 80% 78%, 100% 100%
+  );
+  filter: blur(0.5px);
+}
+
+/* Sun/moon decorative circle */
+.decorCircle {
+  position: absolute;
+  top: 14%;
+  right: 18%;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #f5e6c8 0%, #e8c87a 60%, rgba(200, 150, 60, 0) 100%);
+  box-shadow: 0 0 30px 10px rgba(230, 190, 80, 0.25);
+  animation: glowPulse 4s ease-in-out infinite alternate;
+}
+
+@keyframes glowPulse {
+  from { box-shadow: 0 0 20px 6px rgba(230, 190, 80, 0.20); opacity: 0.85; }
+  to   { box-shadow: 0 0 40px 16px rgba(230, 190, 80, 0.35); opacity: 1; }
+}
+
+/* Month/Year overlay at bottom of left panel */
+.monthOverlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 32px 28px 24px;
+  background: linear-gradient(
+    to top,
+    rgba(20, 10, 4, 0.82) 0%,
+    rgba(20, 10, 4, 0.55) 55%,
+    transparent 100%
+  );
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.monthName {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(2rem, 4vw, 2.9rem);
+  font-weight: 700;
+  color: #F5EDD8;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  margin: 0;
+}
+
+.yearLabel {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(1rem, 1.8vw, 1.25rem);
+  font-weight: 400;
+  font-style: italic;
+  color: rgba(220, 200, 160, 0.85);
+  letter-spacing: 0.12em;
+  margin: 0;
+}
+
+/* ---- RIGHT PANEL ---- */
+.rightPanel {
+  display: flex;
+  flex-direction: column;
+  padding: 24px 22px 20px;
+  gap: 18px;
+  border-left: 1px solid var(--grid-border);
+  background: var(--paper);
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 28px,
+      rgba(139, 111, 71, 0.035) 28px,
+      rgba(139, 111, 71, 0.035) 29px
+    );
+}
+
+/* ---- Calendar Grid ---- */
+.gridSection {
+  flex: 1;
+}
+
+.gridHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.gridTitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.navBtn {
+  background: none;
+  border: 1px solid var(--grid-border);
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  transition: all 0.18s ease;
+}
+
+.navBtn:hover {
+  background: var(--paper-dark);
+  border-color: var(--accent-light);
+  color: var(--accent);
+}
+
+/* Day-of-week labels */
+.dayLabels {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 6px;
+}
+
+.dayLabel {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 4px 0;
+}
+
+.dayLabel.weekend {
+  color: var(--weekend-color);
+  opacity: 0.7;
+}
+
+/* Grid of day cells */
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.dayCell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: clamp(0.65rem, 1.2vw, 0.8rem);
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  color: var(--text-primary);
+  cursor: default;
+  transition: background 0.15s ease, transform 0.12s ease;
+  position: relative;
+  user-select: none;
+}
+
+.dayCell:hover:not(.empty):not(.today) {
+  background: var(--paper-dark);
+  transform: scale(1.08);
+}
+
+.dayCell.empty {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.dayCell.weekend {
+  color: var(--weekend-color);
+}
+
+.dayCell.today {
+  background: var(--today-bg);
+  color: #FFF8EE;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(139, 111, 71, 0.4);
+}
+
+.dayCell.otherMonth {
+  color: var(--text-muted);
+  opacity: 0.4;
+}
+
+/* Dot indicator (placeholder for events) */
+.dayCell.hasEvent::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent-light);
+}
+
+/* ---- Divider ---- */
+.divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--grid-border) 20%, var(--grid-border) 80%, transparent);
+}
+
+/* ---- Notes Section ---- */
+.notesSection {
+  flex-shrink: 0;
+}
+
+.notesSectionTitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+
+.noteLines {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.noteLine {
+  height: 28px;
+  border-bottom: 1px solid rgba(139, 111, 71, 0.18);
+  position: relative;
+}
+
+.noteLine::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 2px;
+  height: 60%;
+  transform: translateY(-50%);
+  background: rgba(139, 111, 71, 0.20);
+  border-radius: 2px;
+}
+
+/* ---- RESPONSIVE — Mobile ---- */
+@media (max-width: 768px) {
+  .calendarBody {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .leftPanel {
+    height: 240px;
+    min-height: 240px;
+  }
+
+  .heroImageArea {
+    height: 240px;
+    min-height: 240px;
+  }
+
+  .imagePlaceholder {
+    height: 240px;
+  }
+
+  .rightPanel {
+    border-left: none;
+    border-top: 1px solid var(--grid-border);
+    padding: 20px 16px 16px;
+  }
+
+  .monthName {
+    font-size: 2rem;
+  }
+
+  .bindingStrip {
+    gap: 36px;
+  }
+}
+
+/* ---- Entrance animation ---- */
+.calendarWrapper {
+  animation: fadeSlideIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
