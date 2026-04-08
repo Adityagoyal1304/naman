@@ -305,112 +305,217 @@
   padding: 4px 0;
 }
 
-.dayLabel.weekend {
+.dayLabelWeekend {
   color: var(--weekend-color);
   opacity: 0.7;
 }
 
-/* Grid of day cells */
+/* ══════════════════════════════════════════
+   Calendar Grid — gap:0 so range bands flush
+══════════════════════════════════════════ */
 .calGrid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 3px;
+  gap: 0;
+  /* overflow visible so hover scale on cellInner never clips */
+  overflow: visible;
 }
 
+/* Grid month-change fade */
+.gridFading {
+  animation: gridFadeOut 0.12s ease both;
+}
+@keyframes gridFadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-5px); }
+}
+
+/* ── Outer cell: full grid-cell area, carries the BAND background ── */
 .dayCell {
   aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s ease;
+}
+
+/* Empty cells */
+.cellEmpty {
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+
+/* ── Inner cell: ~84% of the outer, carries circle/hover/today ring ── */
+.cellInner {
+  width: 84%;
+  height: 84%;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  border-radius: 7px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 400;
-  color: var(--text-primary);
-  cursor: default;
-  transition: background 0.14s ease, transform 0.12s ease, box-shadow 0.14s ease;
   position: relative;
-  user-select: none;
-  gap: 1px;
+  gap: 2px;
+  transition: background 0.12s ease, transform 0.1s ease, box-shadow 0.12s ease;
 }
 
-/* Date number — monospace typewriter font */
+/* Hover highlight — only on non-range, non-special cells */
+.cellHoverable:hover {
+  background: var(--hover-bg);
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(139, 111, 71, 0.12);
+}
+
+/* ── CIRCLE STYLES (on cellInner) ── */
+
+/* Confirmed selected (startDate / endDate / single point) */
+.circleSelected {
+  border-radius: 50%;
+  background: #3D2B1F;
+  box-shadow: 0 2px 10px rgba(61, 43, 31, 0.40);
+  transform: scale(1.0);
+}
+.circleSelected:hover {
+  background: #52392A;
+  transform: scale(1.06);
+}
+.circleSelected .dateNum {
+  color: #FFF8EE;
+  font-weight: 700;
+}
+
+/* Ghost circle on hover-preview end */
+.circlePreview {
+  border-radius: 50%;
+  background: rgba(61, 43, 31, 0.18);
+  border: 2px dashed rgba(61, 43, 31, 0.45);
+}
+.circlePreview .dateNum {
+  color: #3D2B1F;
+  font-weight: 600;
+}
+
+/* Today ring (when not selected) */
+.circleToday {
+  box-shadow: inset 0 0 0 2px var(--today-ring);
+  background: rgba(139, 111, 71, 0.07);
+}
+.circleToday .dateNum {
+  font-weight: 700;
+  color: var(--today-ring);
+}
+.circleToday .todayTick {
+  background: var(--today-tick);
+}
+.circleToday:hover {
+  background: var(--hover-bg);
+}
+
+/* ── BAND STYLES (on outer dayCell, gap:0 so they seamlessly connect) ── */
+
+/* Confirmed middle */
+.bandMid      { background: #E8D5B7; }
+/* Confirmed start (right-half band + inner circle handles left) */
+.bandStart    { background: linear-gradient(to right, transparent 50%, #E8D5B7 50%); }
+/* Confirmed end   (left-half band) */
+.bandEnd      { background: linear-gradient(to left,  transparent 50%, #E8D5B7 50%); }
+/* Preview middle (lighter, semi-transparent) */
+.bandPreviewMid   { background: rgba(232, 213, 183, 0.42); }
+/* Preview start */
+.bandPreviewStart { background: linear-gradient(to right, transparent 50%, rgba(232, 213, 183, 0.42) 50%); }
+/* Preview end */
+.bandPreviewEnd   { background: linear-gradient(to left,  transparent 50%, rgba(232, 213, 183, 0.42) 50%); }
+
+/* ── Typography ── */
 .dateNum {
   font-family: var(--mono);
   font-size: clamp(0.6rem, 1.15vw, 0.78rem);
   font-weight: 400;
   line-height: 1;
   letter-spacing: -0.01em;
+  color: var(--text-primary);
+  transition: color 0.1s ease;
 }
+.dateNumWeekend { color: var(--weekend-color); }
 
-/* Underline tick shown below today's number */
+/* Today tick */
 .todayTick {
   display: block;
   width: 14px;
   height: 2px;
   border-radius: 2px;
   background: var(--today-tick);
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
-.dayCell:hover:not(.empty):not(.today) {
-  background: var(--hover-bg);
-  transform: scale(1.1);
-  box-shadow: 0 2px 8px rgba(139, 111, 71, 0.12);
-}
-
-/* Grid fade animation on month change */
-.gridFading {
-  animation: gridFadeOut 0.12s ease both;
-}
-
-@keyframes gridFadeOut {
-  from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 0; transform: translateY(-4px); }
-}
-
-.dayCell.empty {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.dayCell.weekend .dateNum {
-  color: var(--weekend-color);
-}
-
-/* TODAY: inset ring border + strong date number */
-.dayCell.today {
-  box-shadow:
-    inset 0 0 0 2px var(--today-ring),
-    0 2px 10px rgba(139, 111, 71, 0.18);
-  background: rgba(139, 111, 71, 0.07);
-}
-
-.dayCell.today .dateNum {
-  font-weight: 700;
-  color: var(--today-ring);
-}
-
-.dayCell.today:hover {
-  background: var(--hover-bg);
-  box-shadow:
-    inset 0 0 0 2px var(--today-ring),
-    0 4px 14px rgba(139, 111, 71, 0.22);
-}
-
-/* Dot indicator (placeholder for events) */
-.dayCell.hasEvent .todayTick {
-  background: var(--accent-light);
-}
-
-.dayCell.hasEvent:not(.today)::after {
-  content: '';
-  position: absolute;
-  bottom: 3px;
+/* Event dot */
+.eventDot {
+  display: block;
   width: 4px;
   height: 4px;
   border-radius: 50%;
   background: var(--accent-light);
+  position: absolute;
+  bottom: 3px;
+}
+
+/* ── Range info bar ── */
+.rangeBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(232, 213, 183, 0.38);
+  border: 1px solid rgba(139, 111, 71, 0.22);
+  border-radius: 8px;
+  padding: 5px 10px 5px 8px;
+  margin-bottom: 10px;
+  animation: rangeBarIn 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes rangeBarIn {
+  from { opacity: 0; transform: translateY(-6px) scaleY(0.85); }
+  to   { opacity: 1; transform: translateY(0)    scaleY(1); }
+}
+.rangeBarText {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.68rem;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+}
+.rangeBarText strong { color: var(--text-primary); }
+.rangeBarDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3D2B1F;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+.rangeBarEllipsis { color: var(--text-muted); font-style: italic; }
+.rangeBarClear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  padding: 2px 5px;
+  border-radius: 4px;
+  line-height: 1;
+  transition: color 0.14s, background 0.14s;
+  flex-shrink: 0;
+}
+.rangeBarClear:hover {
+  color: var(--accent);
+  background: rgba(139, 111, 71, 0.12);
 }
 
 /* ---- Divider ---- */
