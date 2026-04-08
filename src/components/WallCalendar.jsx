@@ -10,7 +10,7 @@ const MONTH_NAMES = [
   'September','October','November','December',
 ];
 const MONTH_ABBR = MONTH_NAMES.map(m => m.slice(0, 3));
-const DAY_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const DAY_LABELS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
 const PLACEHOLDER_EVENTS = new Set([3, 11, 17, 22, 28]);
 const NOTE_MAX = 300;
 
@@ -70,10 +70,11 @@ function fmtKey(key) {
   return `${MONTH_ABBR[m - 1]} ${d}, ${y}`;
 }
 function buildCalendarCells(year, month) {
-  const firstDay    = new Date(year, month, 1).getDay();
+  const firstDay    = new Date(year, month, 1).getDay(); // 0 is Sun, 1 is Mon
+  const firstDayIdx = firstDay === 0 ? 6 : firstDay - 1; // map so Mon=0, Sun=6
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const cells = [];
-  for (let i = 0; i < firstDay; i++)     cells.push({ type: 'empty' });
+  for (let i = 0; i < firstDayIdx; i++)  cells.push({ type: 'empty' });
   for (let d = 1; d <= daysInMonth; d++) cells.push({ type: 'day', day: d });
   while (cells.length < 42)              cells.push({ type: 'empty' });
   return cells;
@@ -97,23 +98,39 @@ function BindingStrip() {
   );
 }
 
-function HeroPanel({ month, year, prevMonth, isCrossfading }) {
+function HeroPanel({ month, year, prevMonth, isCrossfading, goToPrev, goToNext }) {
   const currentUrl = getHeroUrl(month);
   const prevUrl    = prevMonth !== null ? getHeroUrl(prevMonth) : null;
   return (
-    <aside className={styles.leftPanel} aria-label="Calendar hero image panel">
-      <img key={month} src={currentUrl} className={styles.heroImg}
-        alt={`${MONTH_NAMES[month]} landscape`} draggable="false" />
-      {isCrossfading && prevUrl && (
-        <img key={`p${prevMonth}`} src={prevUrl}
-          className={`${styles.heroImg} ${styles.heroImgFadeOut}`}
-          alt="" aria-hidden="true" draggable="false" />
-      )}
-      <div className={styles.monthOverlay}>
-        <h1 className={styles.monthName}>{MONTH_NAMES[month]}</h1>
-        <p className={styles.yearLabel}>{year}</p>
+    <header className={styles.heroPanel} aria-label="Calendar hero image panel">
+      <div className={styles.heroImgWrapper}>
+        <img key={month} src={currentUrl} className={styles.heroImg}
+          alt={`${MONTH_NAMES[month]} landscape`} draggable="false" />
+        {isCrossfading && prevUrl && (
+          <img key={`p${prevMonth}`} src={prevUrl}
+            className={`${styles.heroImg} ${styles.heroImgFadeOut}`}
+            alt="" aria-hidden="true" draggable="false" />
+        )}
+        
+        {/* Geometric overlay at the bottom */}
+        <div className={styles.geometricOverlay}>
+          <svg viewBox="0 0 100 20" preserveAspectRatio="none" className={styles.geoSvg}>
+             <polygon fill="var(--accent)" points="0,20 0,12 35,20 100,0 100,20" />
+          </svg>
+        </div>
       </div>
-    </aside>
+
+      <div className={styles.heroContent}>
+        <div className={styles.monthYearBlock}>
+           <div className={styles.yearRow}>
+             <button onClick={goToPrev} className={styles.navBtnLight} aria-label="Previous month">←</button>
+             <span className={styles.yearLabel}>{year}</span>
+             <button onClick={goToNext} className={styles.navBtnLight} aria-label="Next month">→</button>
+           </div>
+           <h1 className={styles.monthName}>{MONTH_NAMES[month].toUpperCase()}</h1>
+        </div>
+      </div>
+    </header>
   );
 }
 
@@ -122,7 +139,7 @@ function DayLabelRow() {
     <div className={styles.dayLabels} role="row">
       {DAY_LABELS.map((label, i) => (
         <div key={label}
-          className={`${styles.dayLabel}${i === 0 || i === 6 ? ' ' + styles.dayLabelWeekend : ''}`}
+          className={`${styles.dayLabel}${i === 5 || i === 6 ? ' ' + styles.dayLabelWeekend : ''}`}
           role="columnheader">
           {label}
         </div>
@@ -209,7 +226,7 @@ function CalendarGrid({
         }
 
         const colIndex  = idx % 7;
-        const isWeekend = colIndex === 0 || colIndex === 6;
+        const isWeekend = colIndex === 5 || colIndex === 6;
         const isToday   = isCurrentMonth && cell.day === todayDay;
         const hasEvent  = PLACEHOLDER_EVENTS.has(cell.day);
         const holiday   = HOLIDAY_MAP[`${displayMonth}-${cell.day}`];
@@ -411,45 +428,12 @@ export default function WallCalendar({ initialYear, initialMonth } = {}) {
     >
       <BindingStrip />
 
-      <div className={styles.calendarBody}>
-        <HeroPanel month={month} year={year}
-          prevMonth={prevMonth} isCrossfading={isCrossfading} />
+      <HeroPanel month={month} year={year}
+        prevMonth={prevMonth} isCrossfading={isCrossfading}
+        goToPrev={goToPrev} goToNext={goToNext} />
 
-        <section className={styles.rightPanel} aria-label="Calendar grid and notes">
-          <div className={styles.gridSection}>
-
-            {/* ── Nav header ── */}
-            <div className={styles.gridHeader}>
-              <button className={styles.navBtn} onClick={goToPrev} aria-label="Previous month">←</button>
-              <span className={[styles.gridTitle, fading && styles.gridTitleFading].filter(Boolean).join(' ')}>
-                {MONTH_NAMES[month]} {year}
-              </span>
-              <button className={styles.navBtn} onClick={goToNext} aria-label="Next month">→</button>
-            </div>
-
-            {/* Today button */}
-            {!isOnToday && (
-              <button className={styles.todayBtn} onClick={goToToday} aria-label="Go to current month">
-                ⌂ Today
-              </button>
-            )}
-
-            <RangeBar startKey={startKey} endKey={endKey} onClear={clearRange} />
-            <DayLabelRow />
-
-            <CalendarGrid
-              cells={cells} todayDay={todayDay}
-              displayYear={year} displayMonth={month} fading={fading}
-              startKey={startKey} endKey={endKey} hoverKey={hoverKey}
-              onDayClick={handleDayClick}
-              onDayHover={handleDayHover}
-              onGridLeave={handleGridLeave}
-              onDayDoubleClick={handleDayDoubleClick}
-            />
-          </div>
-
-          <div className={styles.divider} role="separator" />
-
+      <div className={styles.bottomSection}>
+        <aside className={styles.notesSidebar}>
           <NotesSection
             mKey={mKey}
             monthLabel={monthLabel}
@@ -457,8 +441,33 @@ export default function WallCalendar({ initialYear, initialMonth } = {}) {
             onNoteChange={handleNoteChange}
             onNoteInsert={handleDayDoubleClick}
           />
+        </aside>
+
+        <section className={styles.gridArea} aria-label="Calendar grid">
+          {/* Today button */}
+          {!isOnToday && (
+             <div className={styles.todayRow}>
+               <button className={styles.todayBtn} onClick={goToToday} aria-label="Go to current month">
+                 ⌂ Today
+               </button>
+             </div>
+          )}
+
+          <RangeBar startKey={startKey} endKey={endKey} onClear={clearRange} />
+          <DayLabelRow />
+
+          <CalendarGrid
+            cells={cells} todayDay={todayDay}
+            displayYear={year} displayMonth={month} fading={fading}
+            startKey={startKey} endKey={endKey} hoverKey={hoverKey}
+            onDayClick={handleDayClick}
+            onDayHover={handleDayHover}
+            onGridLeave={handleGridLeave}
+            onDayDoubleClick={handleDayDoubleClick}
+          />
         </section>
       </div>
+
     </article>
   );
 }

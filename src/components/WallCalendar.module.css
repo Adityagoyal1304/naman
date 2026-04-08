@@ -30,7 +30,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 960px;
+  max-width: 800px;
   margin: 0 auto;
   border-radius: var(--radius);
   box-shadow:
@@ -94,19 +94,20 @@
   flex-shrink: 0;
 }
 
-/* ---- Two-Panel Body ---- */
-.calendarBody {
-  display: grid;
-  grid-template-columns: 40% 60%;
-  min-height: 480px;
+/* ---- HERO PANEL ---- */
+.heroPanel {
+  position: relative;
+  height: 380px; /* Fixed height for image area */
+  background: #1a1008;
+  overflow: hidden;
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 
-/* ---- LEFT PANEL ---- */
-.leftPanel {
-  position: relative;
-  overflow: hidden;
-  min-height: 380px;
-  background: #1a1008; /* fallback while image loads */
+.heroImgWrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 /* Hero image — fills panel absolutely, object-fit cover */
@@ -116,13 +117,13 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  object-position: center 30%;
   display: block;
 }
 
-/* Outgoing image — fades out over 0.65s via CSS animation */
+/* Outgoing image — fades out over 0.65s */
 .heroImgFadeOut {
-  z-index: 1; /* sits above incoming image */
+  z-index: 1;
   animation: heroFadeOut 0.65s ease forwards;
 }
 
@@ -131,114 +132,98 @@
   to   { opacity: 0; }
 }
 
-/* Month/Year gradient overlay — always on top */
-.monthOverlay {
+/* Geometric wavy shape at the bottom of the image */
+.geometricOverlay {
   position: absolute;
-  bottom: 0;
+  bottom: -1px; /* prevent subpixel gap */
   left: 0;
-  right: 0;
-  z-index: 2; /* always above image layers */
-  padding: 32px 28px 24px;
-  background: linear-gradient(
-    to top,
-    rgba(10, 5, 2, 0.88) 0%,
-    rgba(10, 5, 2, 0.55) 55%,
-    transparent 100%
-  );
+  width: 100%;
+  z-index: 2;
+}
+
+.geoSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 140px;
+}
+
+/* Right-aligned text & nav buttons in hero */
+.heroContent {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  padding: 0px 48px 24px;
+  z-index: 3;
+}
+
+.monthYearBlock {
+  text-align: right;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.yearRow {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: 0.04em;
+  font-weight: 300;
+  margin-bottom: 2px;
 }
 
 .monthName {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(2rem, 4vw, 2.9rem);
+  font-family: 'Inter', sans-serif;
+  font-size: 2.1rem;
   font-weight: 700;
-  color: #F5EDD8;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.navBtnLight {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 4px;
   line-height: 1;
-  text-shadow: 0 2px 12px rgba(0,0,0,0.5);
-  margin: 0;
+  transition: color 0.1s, transform 0.1s;
+}
+.navBtnLight:hover { 
+  color: #fff; 
+  transform: scale(1.1);
 }
 
-.yearLabel {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(1rem, 1.8vw, 1.25rem);
-  font-weight: 400;
-  font-style: italic;
-  color: rgba(220, 200, 160, 0.85);
-  letter-spacing: 0.12em;
-  margin: 0;
+/* ---- BOTTOM SECTION ---- */
+.bottomSection {
+  display: grid;
+  grid-template-columns: 32% 68%;
+  padding: 32px 32px 24px;
+  gap: 40px;
+  background: var(--paper);
+  border-radius: 0 0 var(--radius) var(--radius);
 }
 
-/* ---- RIGHT PANEL ---- */
-.rightPanel {
+.notesSidebar {
   display: flex;
   flex-direction: column;
-  padding: 24px 22px 20px;
-  gap: 18px;
-  border-left: 1px solid var(--grid-border);
-  background: var(--paper);
-  background-image:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 28px,
-      rgba(139, 111, 71, 0.035) 28px,
-      rgba(139, 111, 71, 0.035) 29px
-    );
 }
 
-/* ---- Calendar Grid ---- */
-.gridSection {
+.gridArea {
+  display: flex;
+  flex-direction: column;
   flex: 1;
 }
 
-.gridHeader {
+/* Today Button Row */
+.todayRow {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.gridTitle {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 0.9rem;
-  font-weight: 600;
-  font-style: italic;
-  letter-spacing: 0.06em;
-  color: var(--accent);
-  transition: opacity 0.12s ease;
-}
-
-.gridTitleFading {
-  opacity: 0;
-}
-
-.navBtn {
-  background: none;
-  border: 1px solid var(--grid-border);
-  border-radius: 6px;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: var(--text-muted);
-  font-size: 1rem;
-  line-height: 1;
-  font-family: inherit;
-  transition: all 0.18s ease;
-  flex-shrink: 0;
-  padding: 0;
-}
-
-.navBtn:hover {
-  background: var(--hover-bg);
-  border-color: var(--accent-light);
-  color: var(--accent);
-  transform: scale(1.08);
+  justify-content: flex-end;
+  margin-bottom: 12px;
 }
 
 /* Day-of-week labels */
@@ -249,9 +234,9 @@
 }
 
 .dayLabel {
-  font-size: 0.6rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-muted);
   text-align: center;
@@ -259,8 +244,8 @@
 }
 
 .dayLabelWeekend {
-  color: var(--weekend-color);
-  opacity: 0.7;
+  color: var(--accent);
+  opacity: 1;
 }
 
 /* ══════════════════════════════════════════
@@ -385,15 +370,15 @@
 
 /* ── Typography ── */
 .dateNum {
-  font-family: var(--mono);
-  font-size: clamp(0.6rem, 1.15vw, 0.78rem);
-  font-weight: 400;
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(0.8rem, 1.3vw, 0.95rem);
+  font-weight: 500;
   line-height: 1;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   color: var(--text-primary);
   transition: color 0.1s ease;
 }
-.dateNumWeekend { color: var(--weekend-color); }
+.dateNumWeekend { color: var(--accent); }
 
 /* Today tick */
 .todayTick {
